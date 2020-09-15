@@ -7,6 +7,7 @@ import org.apache.poi.ss.formula.functions.T;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -20,31 +21,47 @@ public abstract class AbstractOperateTemplates {
     public FieldCheckFactory factory;
 
     public final List<Map<String, Object>> executeTemplates(ExcelCommonDTO commonDTO) {
+        //获取文件数据信息
         List<Map<String, Object>> dataList = readFile(commonDTO.getFile(), commonDTO.getHeadArr());
-        //校验字段完整性
+        //校验字段完整性,将每一条数据的错误信息放在每条数据里面
         checkField(dataList, commonDTO.getFields());
-        //表联系
-        //checkTableRelations(dataList);
-        writeErrorBackToFile();
+        //回写错误信息到源文件
+        try {
+            writeErrorBackToFile(commonDTO.getFile(), dataList);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("错误信息回写excel异常", e);
+        }
         //增加一个拓展接口，防止其他业务需要额外的逻辑，默认空实现 todo
         extendFunction();
-        return null;
+        return dataList;
     }
 
     public final List<Map<String, Object>> executeTemplates(ExcelCommonDTO commonDTO, T t) {
         List<Map<String, Object>> dataList = readFile(commonDTO.getFile(), commonDTO.getHeadArr());
         //校验字段完整性
         checkField(dataList, commonDTO.getFields());
-        //表联系
-        //checkTableRelations(dataList);
-        writeErrorBackToFile();
+        try {
+            writeErrorBackToFile(commonDTO.getFile(), dataList);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("错误信息回写excel异常", e);
+        }
         //增加一个拓展接口，防止其他业务需要额外的逻辑，默认空实现 todo
         extendFunction(t);
-        return null;
+        return dataList;
     }
 
-    public abstract <T> T extendFunction(T t);
+    /**
+     * 拓展接口，自定义实现
+     *
+     * @param t 参数
+     */
+    public abstract void extendFunction(T t);
 
+    /**
+     * 扩展接口，用于自定义逻辑
+     */
     public abstract void extendFunction();
 
     /**
@@ -58,21 +75,14 @@ public abstract class AbstractOperateTemplates {
 
     /**
      * 校验文件字段是否符合
-     *
-     * @return Map<Integer, String>行对应的错误信息
      */
-    public abstract boolean checkField(List<Map<String, Object>> dataList, List<TableFieldPO> fields);
-
-    /**
-     * 校验表之间的联系
-     * 需要数据信息，然后对应的表
-     *
-     * @return Map<Integer, String>
-     */
-    public abstract Map<Integer, String> checkTableRelations(List<Map<String, Object>> dataList);
+    public abstract void checkField(List<Map<String, Object>> dataList, List<TableFieldPO> fields);
 
     /**
      * 在文件写入错误信息
+     *
+     * @param file     文件
+     * @param dataList 数据信息
      */
-    public abstract void writeErrorBackToFile();
+    public abstract void writeErrorBackToFile(MultipartFile file, List<Map<String, Object>> dataList) throws IOException;
 }

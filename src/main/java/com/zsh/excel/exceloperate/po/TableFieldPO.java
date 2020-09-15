@@ -10,25 +10,15 @@ import lombok.Data;
 @Data
 public class TableFieldPO {
 
-    private String tableCatalog;
-
-    private String tableSchema;
-
     private String tableName;
+
+    private String columnCode;
 
     private String columnName;
 
-    private String ordinalPosition;
-
-    private String columnDefault;
-
     private String isNullable;
 
-    private String dataType;
-
-    private Integer characterMaximumLength;
-
-    private String udtName;
+    private Integer maximumLength;
 
     /**
      * 自定义类型
